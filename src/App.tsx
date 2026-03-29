@@ -4,17 +4,31 @@
  */
 
 import { useState, useEffect, Fragment, type RefObject } from 'react';
-import { PenSquare, Download, Plus, Trash2, ChevronRight, Sparkles, RefreshCw, X, BookOpen, Layout, ListChecks, FileJson } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
+// Stub icons to avoid missing dependency on 'lucide-react'
+const PenSquare = () => <span />;
+const Download = () => <span>📥</span>;
+const Plus = () => <span />;
+const Trash2 = () => <span />;
+const ChevronRight = () => <span>▶️</span>;
+const Sparkles = () => <span>✨</span>;
+const RefreshCw = () => <span>🔄</span>;
+const X = () => <span />;
+const BookOpen = () => <span />;
+const Layout = () => <span />;
+const ListChecks = () => <span />;
+const FileJson = () => <span />;
+// Use framer-motion for animations
+import { motion, AnimatePresence } from 'framer-motion';
 import { pickNLCQuestion, pickDSQuestion, pickTLNQuestion, resetUsedQuestions } from './questionBank';
 import { findYeuCau, getAllTopics } from './yeuCauCanDat';
 import { exportMatrixWord, exportSpecMatrixWord, exportExamWord } from './exportWord';
 import { useMathRender } from './MathText';
-import { clsx, type ClassValue } from 'clsx';
+// Simple clsx implementation to avoid external dependency
+function clsx(...classes: any[]) { return classes.filter(Boolean).join(' '); }
 import { twMerge } from 'tailwind-merge';
 
 // Utility for tailwind classes
-function cn(...inputs: ClassValue[]) {
+function cn(...inputs: any[]) {
   return twMerge(clsx(inputs));
 }
 
@@ -892,228 +906,39 @@ function TabTaoDe({ data, countQuestions, onPrev, monHoc = 'Toán' }: any) {
               Câu hỏi được chọn lọc chính xác theo: {data.reduce((acc, c) => acc + c.noiDungs.length, 0)} đơn vị kiến thức đã thiết lập.
             </p>
           </div>
-// Hàm tạo đề toàn bộ (đã có)
-const handleGenerateExam = () => {
-  // Reset tracking để không trùng câu từ lần tạo đề trước
-  resetUsedQuestions();
-
-  let globalStt = 1; // Số thứ tự câu hỏi xuyên suốt
-
-  // Tách thành 3 danh sách tạm thời cho 3 phần theo chuẩn 2026
-  const part1_NLC: any[] = [];
-  const part2_DS: any[] = [];
-  const part3_TLN: any[] = [];
-
-  // Duyệt qua toàn bộ dữ liệu người dùng đã nhập
-  data.forEach((chuong: any) => {
-    chuong.noiDungs.forEach((nd: any) => {
-      // --- PHẦN I: TRẮC NGHIỆM NHIỀU PHƯƠNG ÁN (NLC) ---
-      nd.mucDos.forEach((md: any, mIdx: number) => {
-        const numQ = countQuestions(md.qs.nlc);
-        const mucDoTen = LEVELS[mIdx].name;
-        for (let i = 0; i < numQ; i++) {
-          const q = pickNLCQuestion(nd.tenNoiDung, mucDoTen);
-          part1_NLC.push({
-            noiDung: q.text,
-            options: q.options,
-            dapAn: q.answer,
-            image: q.image,
-            phan: 'I',
-            chuong: chuong.tenChuong,
-            bai: nd.tenNoiDung,
-            mucDo: mucDoTen,
-            yeuCau: md.yeuCau,
-            stt: globalStt++
-          });
-        }
-      });
-
-      // --- PHẦN II: ĐÚNG/SAI (DS) ---
-      const numDS = countQuestions(nd.mucDos[0].qs.ds);
-      for (let i = 0; i < numDS; i++) {
-        const qDS = pickDSQuestion(nd.tenNoiDung);
-        part2_DS.push({
-          ...qDS,
-          phan: 'II',
-          chuong: chuong.tenChuong,
-          bai: nd.tenNoiDung,
-          yeuCau: nd.mucDos[0].yeuCau,
-          stt: globalStt++
-        });
-      }
-
-      // --- PHẦN III: TRẢ LỜI NGẮN (TLN) ---
-      nd.mucDos.forEach((md: any, mIdx: number) => {
-        const numTLN = countQuestions(md.qs.tln);
-        const mucDoTen = LEVELS[mIdx].name;
-        for (let i = 0; i < numTLN; i++) {
-          const qTLN = pickTLNQuestion(nd.tenNoiDung, mucDoTen);
-          part3_TLN.push({
-            noiDung: qTLN.text,
-            dapAn: qTLN.answer,
-            image: qTLN.image,
-            phan: 'III',
-            chuong: chuong.tenChuong,
-            bai: nd.tenNoiDung,
-            mucDo: mucDoTen,
-            yeuCau: md.yeuCau,
-            stt: globalStt++
-          });
-        }
-      });
-    });
-  });
-
-  // Gộp các phần lại và cập nhật state
-  setExam([...part1_NLC, ...part2_DS, ...part3_TLN]);
-};
-
-// ---------------------------------------------------
-// Các hàm tạo riêng từng phần (NLC, DS, TLN)
-// ---------------------------------------------------
-
-/** Tạo riêng phần NLC (Phần I) */
-const handleGenerateNLC = () => {
-  resetUsedQuestions();
-  let stt = 1;
-  const part1_NLC: any[] = [];
-  data.forEach((chuong: any) => {
-    chuong.noiDungs.forEach((nd: any) => {
-      nd.mucDos.forEach((md: any, mIdx: number) => {
-        const numQ = countQuestions(md.qs.nlc);
-        const mucDoTen = LEVELS[mIdx].name;
-        for (let i = 0; i < numQ; i++) {
-          const q = pickNLCQuestion(nd.tenNoiDung, mucDoTen);
-          part1_NLC.push({
-            noiDung: q.text,
-            options: q.options,
-            dapAn: q.answer,
-            image: q.image,
-            phan: 'I',
-            chuong: chuong.tenChuong,
-            bai: nd.tenNoiDung,
-            mucDo: mucDoTen,
-            yeuCau: md.yeuCau,
-            stt: stt++
-          });
-        }
-      });
-    });
-  });
-  setExam(part1_NLC);
-};
-
-/** Tạo riêng phần Đúng/Sai (Phần II) */
-const handleGenerateDS = () => {
-  resetUsedQuestions();
-  let stt = 1;
-  const part2_DS: any[] = [];
-  data.forEach((chuong: any) => {
-    chuong.noiDungs.forEach((nd: any) => {
-      const numDS = countQuestions(nd.mucDos[0].qs.ds);
-      for (let i = 0; i < numDS; i++) {
-        const qDS = pickDSQuestion(nd.tenNoiDung);
-        part2_DS.push({
-          ...qDS,
-          phan: 'II',
-          chuong: chuong.tenChuong,
-          bai: nd.tenNoiDung,
-          yeuCau: nd.mucDos[0].yeuCau,
-          stt: stt++
-        });
-      }
-    });
-  });
-  setExam(part2_DS);
-};
-
-/** Tạo riêng phần Trả lời ngắn (Phần III) */
-const handleGenerateTLN = () => {
-  resetUsedQuestions();
-  let stt = 1;
-  const part3_TLN: any[] = [];
-  data.forEach((chuong: any) => {
-    chuong.noiDungs.forEach((nd: any) => {
-      nd.mucDos.forEach((md: any, mIdx: number) => {
-        const numTLN = countQuestions(md.qs.tln);
-        const mucDoTen = LEVELS[mIdx].name;
-        for (let i = 0; i < numTLN; i++) {
-          const qTLN = pickTLNQuestion(nd.tenNoiDung, mucDoTen);
-          part3_TLN.push({
-            noiDung: qTLN.text,
-            dapAn: qTLN.answer,
-            image: qTLN.image,
-            phan: 'III',
-            chuong: chuong.tenChuong,
-            bai: nd.tenNoiDung,
-            mucDo: mucDoTen,
-            yeuCau: md.yeuCau,
-            stt: stt++
-          });
-        }
-      });
-    });
-  });
-  setExam(part3_TLN);
-};
-
-// ---------------------------------------------------
-// UI: Thêm các nút tạo riêng từng phần trong header
-// ---------------------------------------------------
-
-// Thay đổi trong phần header (các nút)
-// Replace the existing button block with the expanded version
-// (Lines 856‑866) will be replaced by the following JSX:
-
-{/* Header điều khiển */}
-<div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-lg">
-  <div className="flex justify-between items-center mb-4">
-    <div>
-      <h2 className="text-xl font-black flex items-center gap-2">
-        <Sparkles className="text-indigo-600" />
-        Sinh đề từ Ma trận đặc tả
-      </h2>
-      <p className="text-xs text-slate-400 mt-1">
-        Câu hỏi được chọn lọc chính xác theo: {data.reduce((acc, c) => acc + c.noiDungs.length, 0)} đơn vị kiến thức đã thiết lập.
-      </p>
-    </div>
-    <div className="flex flex-wrap gap-2">
-      <button
-        onClick={() => exportExamWord(exam, monHoc)}
-        className="px-4 py-2 bg-blue-600 text-white rounded-xl font-bold text-sm flex items-center gap-2 hover:bg-blue-700 transition-all shadow-lg"
-      >
-        <Download className="w-4 h-4" /> Xuất Word
-      </button>
-      <button
-        onClick={handleGenerateExam}
-        className="bg-indigo-600 text-white px-8 py-3 rounded-xl font-black hover:bg-indigo-700 transition-all flex items-center gap-2 shadow-xl"
-      >
-        <RefreshCw className="w-5 h-5" /> TẠO ĐỀ (TẤT CẢ)
-      </button>
-      <button
-        onClick={handleGenerateNLC}
-        className="bg-emerald-600 text-white px-6 py-2 rounded-xl font-medium hover:bg-emerald-700 transition-all"
-      >
-        <RefreshCw className="w-4 h-4" /> NLC (Phần I)
-      </button>
-      <button
-        onClick={handleGenerateDS}
-        className="bg-amber-600 text-white px-6 py-2 rounded-xl font-medium hover:bg-amber-700 transition-all"
-      >
-        <RefreshCw className="w-4 h-4" /> Đúng/Sai (Phần II)
-      </button>
-      <button
-        onClick={handleGenerateTLN}
-        className="bg-rose-600 text-white px-6 py-2 rounded-xl font-medium hover:bg-rose-700 transition-all"
-      >
-        <RefreshCw className="w-4 h-4" /> TLN (Phần III)
-      </button>
-    </div>
-  </div>
-</div>
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={() => exportExamWord(exam, monHoc)}
+              className="px-4 py-2 bg-blue-600 text-white rounded-xl font-bold text-sm flex items-center gap-2 hover:bg-blue-700 transition-all shadow-lg"
+            >
+              <Download className="w-4 h-4" /> Xuất Word
+            </button>
+            <button
+              onClick={handleGenerateExam}
+              className="bg-indigo-600 text-white px-8 py-3 rounded-xl font-black hover:bg-indigo-700 transition-all flex items-center gap-2 shadow-xl"
+            >
+              <RefreshCw className="w-5 h-5" /> TẠO ĐỀ (TẤT CẢ)
+            </button>
+            <button
+              onClick={handleGenerateNLC}
+              className="bg-emerald-600 text-white px-6 py-2 rounded-xl font-medium hover:bg-emerald-700 transition-all"
+            >
+              <RefreshCw className="w-4 h-4" /> NLC (Phần I)
+            </button>
+            <button
+              onClick={handleGenerateDS}
+              className="bg-amber-600 text-white px-6 py-2 rounded-xl font-medium hover:bg-amber-700 transition-all"
+            >
+              <RefreshCw className="w-4 h-4" /> Đúng/Sai (Phần II)
+            </button>
+            <button
+              onClick={handleGenerateTLN}
+              className="bg-rose-600 text-white px-6 py-2 rounded-xl font-medium hover:bg-rose-700 transition-all"
+            >
+              <RefreshCw className="w-4 h-4" /> TLN (Phần III)
+            </button>
+          </div>
         </div>
-
-        {/* Nút tạo lại riêng từng phần */}
         {exam.length > 0 && (
           <div className="flex flex-wrap gap-2 pt-3 border-t border-slate-100">
             <span className="text-[10px] font-bold text-slate-400 uppercase self-center mr-2">Tạo lại riêng:</span>
